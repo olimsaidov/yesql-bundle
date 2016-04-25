@@ -57,7 +57,7 @@ class YesqlExtension extends Extension
         $appName = $container->getParameter('kernel.name');
         $env = $container->getParameter('kernel.environment');
         $container->addResource(new FileResource($file));
-        $class = sprintf('%s%sYesql%s', $appName, ucfirst($env), ucfirst($name));
+        $class = sprintf('%s%sYesql%s', $appName, ucfirst($env), ucfirst(str_replace('.', '_', $name)));
 
         $factory = new ConfigCacheFactory(true);
         $cache = $factory->cache(
