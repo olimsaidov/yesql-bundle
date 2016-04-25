@@ -1,0 +1,19 @@
+{
+    "name": "ox/yesql-bundle",
+    "description": "Yesql Bundle for Symfony",
+    "license": "MIT",
+    "keywords": ["database", "doctrine", "yesql", "sql", "symfony"],
+    "authors": [
+        {
+            "name": "Olim Saidov",
+            "email": "olim.mail@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0.0",
+    },
+    "autoload": {
+        "psr-4": { "Ox\\YesqlBundle\\": "" }
+    },
+    "type": "symfony-bundle"
+}
