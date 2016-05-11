@@ -46,8 +46,8 @@ class YesqlParser
             preg_match('/^([^\|\*]+)(\||\*)*$/', $query['name'], $matches);
 
             $query['name'] = $matches[1];
-            $query['fetch_all'] = $matches[2] == '*';
-            $query['fetch_column'] = $matches[2] == '|';
+            $query['fetch_all'] = isset($matches[2]) && $matches[2] == '*';
+            $query['fetch_column'] = isset($matches[2]) && $matches[2] == '|';
         }
 
         return $queries;
