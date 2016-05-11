@@ -41,15 +41,13 @@ class YesqlParser
             }
 
             $query['type'] = strtolower($matches[1]);
+            $query['returning'] = preg_match('/\sreturning\s/i', $query['sql']) == 1;
 
-            if ($query['name'][strlen($query['name']) - 1] == '*') {
-                if ($query['type'] != 'select') {
-                    throw new \LogicException("Unexpected * in non-select query name at at ${query['file']}:${query['line']}");
-                }
+            preg_match('/^([^\|\*]+)(\||\*)*$/', $query['name'], $matches);
 
-                $query['multiple'] = true;
-                $query['name'] = substr($query['name'], 0, -1);
-            }
+            $query['name'] = $matches[1];
+            $query['fetch_all'] = $matches[2] == '*';
+            $query['fetch_column'] = $matches[2] == '|';
         }
 
         return $queries;

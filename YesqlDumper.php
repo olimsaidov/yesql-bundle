@@ -40,27 +40,35 @@ PHP;
             $type = $query['type'];
             $line = $query['line'];
             $file = $query['file'];
-            $multiple = $query['multiple'] ?? false;
+            $fetch_all = $query['fetch_all'];
+            $fetch_column = $query['fetch_column'];
+            $returning = $query['returning'];
 
-            switch ($type) {
-                case 'insert':
-                    $returnStatement = <<<PHP
+            if ($returning || $type == 'select') {
+                $method = $fetch_all
+                    ? 'fetchAll(\PDO::FETCH_ASSOC)'
+                    : ($fetch_column
+                        ? 'fetchColumn()'
+                        : 'fetch(\PDO::FETCH_ASSOC)');
+
+                $returnStatement = <<<PHP
+        return \$statement->${method};
+PHP;
+                $returnType = $fetch_column
+                    ? 'mixed|false'
+                    : 'array|false';
+            }
+            else if ($type == 'insert') {
+                $returnStatement = <<<PHP
         return \$this->connection->lastInsertId();
 PHP;
-                    $returnType = 'int';
-                    break;
-                case 'select':
-                    $method = $multiple ? 'fetchAll' : 'fetch';
-                    $returnStatement = <<<PHP
-        return \$statement->${method}(\PDO::FETCH_ASSOC);
-PHP;
-                    $returnType = 'array|false';
-                    break;
-                default:
-                    $returnStatement = <<<PHP
+                $returnType = 'int';
+            }
+            else {
+                $returnStatement = <<<PHP
         return \$statement->rowCount();
 PHP;
-                    $returnType = 'int';
+                $returnType = 'int';
             }
 
             $result .= <<<PHP
@@ -74,7 +82,7 @@ PHP;
             \$args = \$args[0];
         }
         
-        \$statement = \$this->connection->prepare(${sql});
+        \$statement = \$this->connection->prepare(/** @lang SQL */${sql});
         \$statement->execute(\$args);
         
 ${returnStatement}
