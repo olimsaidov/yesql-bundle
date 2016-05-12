@@ -6,6 +6,7 @@ use Ox\YesqlBundle\YesqlDumper;
 use Ox\YesqlBundle\YesqlParser;
 use Symfony\Component\Config\ConfigCacheFactory;
 use Symfony\Component\Config\ConfigCacheInterface;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -28,7 +29,6 @@ class YesqlExtension extends Extension
 
     public function load(array $configs, ContainerBuilder $container)
     {
-
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
 
@@ -36,6 +36,12 @@ class YesqlExtension extends Extension
         $config = $this->processConfiguration($configuration, $configs);
 
         $defaultConnection = $config['connection'];
+
+        $names = array_column($config['services'], 'name');
+
+        if (count($names) != count(array_unique($names))) {
+            throw new InvalidConfigurationException('Service names are not unique.');
+        }
 
         foreach ($config['services'] as $service) {
             list($class, $path) = $this->createClass($service['path'], $service['name'], $container);
@@ -54,10 +60,9 @@ class YesqlExtension extends Extension
     public function createClass($file, $name, ContainerBuilder $container)
     {
         $cacheDir = $container->getParameter('kernel.cache_dir');
-        $appName = $container->getParameter('kernel.name');
-        $env = $container->getParameter('kernel.environment');
         $container->addResource(new FileResource($file));
-        $class = sprintf('%s%sYesql%s', $appName, ucfirst($env), ucfirst(str_replace('.', '_', $name)));
+
+        $class = sprintf('Yesql%s', $this->toCamelCase($name));
 
         $factory = new ConfigCacheFactory(true);
         $cache = $factory->cache(
@@ -72,5 +77,12 @@ class YesqlExtension extends Extension
         );
 
         return [$class, $cache->getPath()];
+    }
+
+    private function toCamelCase($string)
+    {
+        return ucfirst(preg_replace_callback('/(_|\.)([a-z])/', function($matches) {
+            return strtoupper($matches[2]);
+        }, $string));
     }
 }
