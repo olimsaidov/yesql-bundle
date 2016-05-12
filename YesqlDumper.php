@@ -37,48 +37,42 @@ PHP;
         foreach ($queries as $query) {
             $sql = var_export($query['sql'], true);
             $name = $query['name'];
-            $type = $query['type'];
-            $line = $query['line'];
-            $file = $query['file'];
-            $fetch_all = $query['fetch_all'];
-            $fetch_column = $query['fetch_column'];
-            $returning = $query['returning'];
+            $return = $query['return'];
+            $arguments = $query['arguments'] ?? [];
+            $returnType = '';
 
-            if ($returning || $type == 'select') {
-                $method = $fetch_all
-                    ? 'fetchAll(\PDO::FETCH_ASSOC)'
-                    : ($fetch_column
-                        ? 'fetchColumn()'
-                        : 'fetch(\PDO::FETCH_ASSOC)');
-
+            if ($return == 'statement') {
                 $returnStatement = <<<PHP
-        return \$statement->${method};
+        return \$statement;
 PHP;
-                $returnType = $fetch_column
-                    ? 'mixed|false'
-                    : 'array|false';
-            }
-            else if ($type == 'insert') {
+                $returnType = '@return Doctrine\DBAL\Driver\PDOStatement';
+            } else if ($return == 'lastInsertId') {
                 $returnStatement = <<<PHP
         return \$this->connection->lastInsertId();
 PHP;
-                $returnType = 'int';
-            }
-            else {
+                $returnType = '@return int';
+            } else if ($return == 'rowCount') {
                 $returnStatement = <<<PHP
         return \$statement->rowCount();
 PHP;
-                $returnType = 'int';
+                $returnType = '@return int';
+            }
+            else {
+                $arguments = join(' | ', array_map(function($argument) {
+                    return '\PDO::' . $argument;
+                }, $arguments));
+                $returnStatement = <<<PHP
+        return \$statement->${return}(${arguments});
+PHP;
+                $returnType = '@return mixed';
             }
 
             $result .= <<<PHP
     /**
-     * @return ${returnType}
-     * @see ${file}:${line}
+     * ${returnType}
      */
     public function ${name}(...\$args) {
         if (count(\$args) == 1 && is_array(\$args[0])) {
-            // named parameters
             \$args = \$args[0];
         }
         

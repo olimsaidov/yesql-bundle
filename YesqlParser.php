@@ -6,56 +6,69 @@ class YesqlParser
 {
     public function parse($file)
     {
-        $queries = [];
+        $blocks = [];
 
-        foreach (file($file) as $line => $row) {
-            $line += 1;
+        $comment = '';
+        $sql = '';
+        $state = 'comment';
+
+        foreach (file($file) as $row) {
             $isComment = strpos($row, '--') === 0;
 
-            if ($isComment && ($name = $this->getMethodName($row))) {
-                $queries[] = [
-                    'comment' => $row,
-                    'name' => $name,
-                    'line' => $line,
-                    'file' => $file,
-                    'sql' => '',
-                ];
-            } elseif (!$isComment) {
-                if ($queries) {
-                    $queries[count($queries) - 1]['sql'] .= $row;
-                } else {
-                    throw new \LogicException("Found query without comment header at ${path}:${line}");
+            if ($isComment) {
+                if ($state != 'comment' && trim($comment) && trim($sql)) {
+                    $blocks[] = [trim($comment), trim($sql)];
+
+                    $comment = '';
+                    $sql = '';
                 }
+
+                $state = 'comment';
+                $comment .= $row;
+            } else {
+                $sql .= $row;
+                $state = '$sql';
             }
+
         }
 
-        foreach ($queries as &$query) {
-            $query['sql'] = trim($query['sql']);
+        if ($state != 'comment' && trim($comment) && trim($sql)) {
+            $blocks[] = [trim($comment), trim($sql)];
+        }
 
-            if (!$query['sql']) {
-                throw new \LogicException("Empty query at ${query['file']}:${query['line']}");
+        $queries = [];
+        foreach ($blocks as list ($comment, $sql)) {
+            $query = ['sql' => $sql];
+
+            if (!preg_match('/--\s*name:\s*(\S+)/', $comment, $matches)) {
+                throw new \LogicException('Query name not found: ' . $file);
             }
-
-            if (!preg_match('/^(select|insert|update|delete)/i', $query['sql'], $matches)) {
-                throw new \LogicException("Cannot detect type of query at ${query['file']}:${query['line']}");
-            }
-
-            $query['type'] = strtolower($matches[1]);
-            $query['returning'] = preg_match('/\sreturning\s/i', $query['sql']) == 1;
-
-            preg_match('/^([^\|\*]+)(\||\*)*$/', $query['name'], $matches);
-
             $query['name'] = $matches[1];
-            $query['fetch_all'] = isset($matches[2]) && $matches[2] == '*';
-            $query['fetch_column'] = isset($matches[2]) && $matches[2] == '|';
+
+            if (!preg_match('/^\s*(select|insert|update|delete)/i', $sql, $matches)) {
+                throw new \LogicException('Query type not detected: ' . $file);
+            }
+            $type = strtolower($matches[1]);
+
+            if ($type == 'insert') {
+                $query['return'] = 'lastInsertId';
+            } else if ($type == 'select') {
+                $query['return'] = 'fetch';
+            } else {
+                $query['return'] = 'rowCount';
+            }
+
+            if (preg_match('/--\s*return:\s*(\S+)\s*(\S.*)?/', $comment, $matches)) {
+                $query['return'] = $matches[1];
+
+                if (isset($matches[2]) && preg_match_all('/(\S+)\s*/', $matches[2], $matches)) {
+                    $query['arguments'] = $matches[1];
+                }
+            }
+
+            $queries[] = $query;
         }
 
         return $queries;
-    }
-
-    public function getMethodName($line)
-    {
-        preg_match("/\bname:\s*(.+)/", $line, $matches);
-        return $matches[1] ?? null;
     }
 }
