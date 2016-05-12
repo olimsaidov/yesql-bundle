@@ -15,16 +15,22 @@ use Doctrine\DBAL\Connection;
 
 class ${className} {
 
-    /**
-     * @var Connection
-     */
+${methods}
     private \$connection;
 
     public function __construct(Connection \$connection) {
         \$this->connection = \$connection;
     }
     
-${methods}
+    private function execute(\$args, \$sql) {
+        \$statement = \$this->connection->prepare(\$sql);
+        \$statement->execute(
+            count(\$args) == 1 && is_array(\$args[0])
+                ? \$args[0]
+                : \$args);
+
+        return \$statement;
+    }
 }   
 
 PHP;
@@ -72,12 +78,7 @@ PHP;
      * ${returnType}
      */
     public function ${name}(...\$args) {
-        if (count(\$args) == 1 && is_array(\$args[0])) {
-            \$args = \$args[0];
-        }
-        
-        \$statement = \$this->connection->prepare(/** @lang SQL */${sql});
-        \$statement->execute(\$args);
+        \$statement = \$this->execute(\$args, ${sql});
         
 ${returnStatement}
     }
