@@ -11,13 +11,14 @@ class YesqlParser
         $comment = '';
         $sql = '';
         $state = 'comment';
+        $trim = " \t\n\r\0\x0B;";
 
         foreach (file($file) as $row) {
             $isComment = strpos($row, '--') === 0;
 
             if ($isComment) {
-                if ($state != 'comment' && trim($comment) && trim($sql)) {
-                    $blocks[] = [trim($comment), trim($sql)];
+                if ($state != 'comment' && trim($comment) && trim($sql, $trim)) {
+                    $blocks[] = [trim($comment), trim($sql, $trim)];
 
                     $comment = '';
                     $sql = '';
@@ -32,8 +33,8 @@ class YesqlParser
 
         }
 
-        if ($state != 'comment' && trim($comment) && trim($sql)) {
-            $blocks[] = [trim($comment), trim($sql)];
+        if ($state != 'comment'  && trim($comment) && trim($sql, $trim)) {
+            $blocks[] = [trim($comment), trim($sql, $trim)];
         }
 
         $queries = [];

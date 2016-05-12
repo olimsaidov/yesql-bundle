@@ -35,7 +35,7 @@ PHP;
         $result = '';
 
         foreach ($queries as $query) {
-            $sql = var_export($query['sql'], true);
+            $sql = var_export("\n" . preg_replace('/^/m', '            ', $query['sql']), true);
             $name = $query['name'];
             $return = $query['return'];
             $arguments = $query['arguments'] ?? [];
