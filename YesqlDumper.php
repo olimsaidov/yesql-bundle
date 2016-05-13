@@ -13,21 +13,33 @@ class YesqlDumper
 
 use Doctrine\DBAL\Connection;
 
+function booleanify(\$acc, \$value, \$index) {
+    if (is_bool(\$value)) {
+        \$acc[\$index] =  \$value ? 't' : 'f';
+    } else {
+        \$acc[\$index] = \$value;
+    }
+}
+
+
 class ${className} {
 
 ${methods}
     private \$connection;
 
+    private \$isPostgers;
+
     public function __construct(Connection \$connection) {
         \$this->connection = \$connection;
+        \$this->isPostgers = \$connection->getDriver()->getName() == 'pdo_pgsql';
     }
     
     private function execute(\$args, \$sql) {
         \$statement = \$this->connection->prepare(\$sql);
         \$statement->execute(
             count(\$args) == 1 && is_array(\$args[0])
-                ? \$args[0]
-                : \$args);
+                ? \$this->isPostgers ? array_reduce(\$args[0], 'booleanify', []) : \$args[0]
+                : \$this->isPostgers ? array_reduce(\$args, 'booleanify', []) : \$args);
 
         return \$statement;
     }
