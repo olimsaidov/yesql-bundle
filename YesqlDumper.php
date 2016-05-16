@@ -13,35 +13,42 @@ class YesqlDumper
 
 use Doctrine\DBAL\Connection;
 
-function booleanify(\$acc, \$value, \$index) {
-    if (is_bool(\$value)) {
-        \$acc[\$index] =  \$value ? 't' : 'f';
-    } else {
-        \$acc[\$index] = \$value;
-    }
-}
-
 
 class ${className} {
 
 ${methods}
     private \$connection;
 
-    private \$isPostgers;
+    private \$isPostgres;
 
-    public function __construct(Connection \$connection) {
+    public function __construct(Connection \$connection) 
+    {
         \$this->connection = \$connection;
-        \$this->isPostgers = \$connection->getDriver()->getName() == 'pdo_pgsql';
+        \$this->isPostgres = \$connection->getDriver()->getName() == 'pdo_pgsql';
     }
     
-    private function execute(\$args, \$sql) {
+    private function execute(\$args, \$sql) 
+    {
         \$statement = \$this->connection->prepare(\$sql);
-        \$statement->execute(
-            count(\$args) == 1 && is_array(\$args[0])
-                ? \$this->isPostgers ? array_reduce(\$args[0], 'booleanify', []) : \$args[0]
-                : \$this->isPostgers ? array_reduce(\$args, 'booleanify', []) : \$args);
+
+        \$args = count(\$args) == 1 && is_array(\$args[0]) ? \$args[0] : \$args;
+        \$args = \$this->isPostgres ? \$this->booleanify(\$args) : \$args;
+        \$statement->execute(\$args);
 
         return \$statement;
+    }
+    
+    public function booleanify(\$array) 
+    {
+        \$result = [];
+
+        foreach (\$array as \$key => \$value) {
+            \$result[\$key] =  is_bool(\$value)
+                ? (\$value ? 't' : 'f')
+                : \$value;
+        }
+
+        return \$result;
     }
 }   
 
