@@ -19,22 +19,30 @@ class ${className} {
 ${methods}
     private \$connection;
 
-    private \$isPostgres;
-
     public function __construct(Connection \$connection) 
     {
         \$this->connection = \$connection;
-        \$this->isPostgres = \$connection->getDriver()->getName() == 'pdo_pgsql';
     }
     
     private function execute(\$args, \$sql) 
     {
-        \$statement = \$this->connection->prepare(\$sql);
+        \$connection = \$this->connection;
+        
+        if (\$args[0] instanceof Connection) {
+            \$connection = array_shift(\$args);
+        }
+        
+        \$statement = \$connection->prepare(\$sql);
 
-        \$args = count(\$args) == 1 && is_array(\$args[0]) ? \$args[0] : \$args;
-        \$args = \$this->isPostgres ? \$this->booleanify(\$args) : \$args;
+        \$args = count(\$args) == 1 && is_array(\$args[0]) 
+             ? \$args[0] 
+             : \$args;
+             
+        \$args = \$connection->getDriver()->getName() == 'pdo_pgsql'
+             ? \$this->booleanify(\$args) 
+             : \$args;
+             
         \$statement->execute(\$args);
-
         return \$statement;
     }
     
