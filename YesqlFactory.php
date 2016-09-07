@@ -10,7 +10,10 @@ class YesqlFactory
     {
         $class = basename($path, '.php');
 
-        require_once $path;
+        if (!class_exists($class)) {
+            require_once $path;
+        }
+
         return new $class($connection);
     }
 }
