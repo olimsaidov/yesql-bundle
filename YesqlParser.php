@@ -46,14 +46,14 @@ class YesqlParser
             }
             $query['name'] = $matches[1];
 
-            if (!preg_match('/^\s*(select|insert|update|delete)/i', $sql, $matches)) {
+            if (!preg_match('/^\s*(select|insert|update|delete|with)/i', $sql, $matches)) {
                 throw new \LogicException('Query type not detected: ' . $file);
             }
             $type = strtolower($matches[1]);
 
             if ($type == 'insert') {
                 $query['return'] = 'lastInsertId';
-            } else if ($type == 'select') {
+            } else if ($type == 'select' || $type == 'with') {
                 $query['return'] = 'fetch';
             } else {
                 $query['return'] = 'rowCount';
