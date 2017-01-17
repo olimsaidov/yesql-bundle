@@ -28,7 +28,7 @@ ${methods}
     {
         \$connection = \$this->connection;
         
-        if (\$args[0] instanceof Connection) {
+        if (\$args && \$args[0] instanceof Connection) {
             \$connection = array_shift(\$args);
         }
         
