@@ -89,6 +89,4 @@ $this->get('yesql.blog')->getPostById(3); // returns single post
 $this->get('yesql.blog')->insertPost([':title' => 'Hello', ':body' => 'World']); // returns last insert id
 ```
 
-<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/FqeoV9c8sNMMQofhQQQJn5yW/olimsaidov/yesql-bundle'>
-  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/FqeoV9c8sNMMQofhQQQJn5yW/olimsaidov/yesql-bundle.svg' />
-</a>
+
